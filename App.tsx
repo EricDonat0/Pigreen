@@ -1,20 +1,22 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import AnimacaoIntro from './src/components/AnimacaoIntro';
+import Cadastro from './src/screens/Cadastro';
+import Login from './src/screens/Login';
 
 export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
-}
+  const [telaAtual, setTelaAtual] = useState<'splash' | 'login' | 'cadastro'>('splash');
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+  if (telaAtual === 'splash') {
+    return <AnimacaoIntro onFinish={() => setTelaAtual('login')} />;
+  }
+
+  if (telaAtual === 'login') {
+    return <Login onIrParaCadastro={() => setTelaAtual('cadastro')} />;
+  }
+
+  if (telaAtual === 'cadastro') {
+    return <Cadastro onVoltarLogin={() => setTelaAtual('login')} />;
+  }
+
+  return null;
+}
