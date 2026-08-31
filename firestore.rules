@@ -1,0 +1,58 @@
+rules_version = '2';
+
+// Regras de segurança do Pigreen.
+//
+// Princípio: uma conta só enxerga os próprios dados. Como o id do documento é
+// sempre o uid do dono, a verificação é direta e não precisa de leitura extra.
+//
+// Publicar: `firebase deploy --only firestore:rules`
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function ehDono(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // Perfil do responsável e da criança.
+    match /usuarios/{uid} {
+      allow read: if ehDono(uid);
+      // O documento é criado pelo próprio app logo após o cadastro.
+      allow create: if ehDono(uid);
+      // O uid nunca muda de dono, e a data de criação é imutável.
+      allow update: if ehDono(uid)
+                    && request.resource.data.criadoEm == resource.data.criadoEm;
+      allow delete: if false;
+    }
+
+    // Estado do pet.
+    match /pets/{uid} {
+      allow read, create: if ehDono(uid);
+
+      // Barra de status só existe entre 0 e 100 e o nível nunca regride:
+      // sem isso, um cliente adulterado poderia gravar nível 999.
+      allow update: if ehDono(uid)
+                    && request.resource.data.nivel >= resource.data.nivel
+                    && request.resource.data.necessidades.saude is number
+                    && request.resource.data.necessidades.saude >= 0
+                    && request.resource.data.necessidades.saude <= 100
+                    && request.resource.data.necessidades.saciedade >= 0
+                    && request.resource.data.necessidades.saciedade <= 100
+                    && request.resource.data.necessidades.felicidade >= 0
+                    && request.resource.data.necessidades.felicidade <= 100;
+
+      allow delete: if false;
+
+      // Histórico de refeições: append-only, para que a aba do responsável
+      // possa confiar no que mostra.
+      match /historico/{registro} {
+        allow read, create: if ehDono(uid);
+        allow update, delete: if false;
+      }
+    }
+
+    // Nada mais é acessível.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

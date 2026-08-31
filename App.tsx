@@ -1,34 +1,31 @@
-import React, { useState } from 'react';
-import AnimacaoIntro from './src/components/AnimacaoIntro';
-import Cadastro from './src/screens/Cadastro';
-import Login from './src/screens/Login';
-import Home from './src/screens/Home'; // <-- Importamos a Home
+import React from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ProvedorPreferencias } from './src/contexts/PreferenciasContext';
+import { ProvedorAutenticacao } from './src/contexts/AutenticacaoContext';
+import { ProvedorPet } from './src/contexts/PetContext';
+import { RootNavigator } from './src/navigation/RootNavigator';
 
+/**
+ * Composição raiz do Pigreen.
+ *
+ * A ordem dos provedores importa: preferências (tema e idioma) precisam existir
+ * antes de qualquer tela desenhar, `ProvedorPet` depende da sessão exposta por
+ * `ProvedorAutenticacao`, e a navegação depende dos três. Nenhuma lógica mora
+ * aqui — este arquivo é só a montagem.
+ */
 export default function App() {
-  // Adicionamos 'home' na lista de telas
-  const [telaAtual, setTelaAtual] = useState<'splash' | 'login' | 'cadastro' | 'home'>('splash');
-
-  if (telaAtual === 'splash') {
-    return <AnimacaoIntro onFinish={() => setTelaAtual('login')} />;
-  }
-
-  if (telaAtual === 'login') {
-    // Passamos a instrução de ir para a home se o login der certo
-    return (
-      <Login
-        onIrParaCadastro={() => setTelaAtual('cadastro')}
-        onLoginSucesso={() => setTelaAtual('home')}
-      />
-    );
-  }
-
-  if (telaAtual === 'cadastro') {
-    return <Cadastro onVoltarLogin={() => setTelaAtual('login')} />;
-  }
-
-  if (telaAtual === 'home') {
-    return <Home />;
-  }
-
-  return null;
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <ProvedorPreferencias>
+          <ProvedorAutenticacao>
+            <ProvedorPet>
+              <RootNavigator />
+            </ProvedorPet>
+          </ProvedorAutenticacao>
+        </ProvedorPreferencias>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
+  );
 }
